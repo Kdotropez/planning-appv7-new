@@ -1,6 +1,6 @@
-﻿import '../../assets/styles.css';
+import '../../assets/styles.css';
 
-const Button = ({ className, onClick, text, style, disabled }) => {
+const Button = ({ className, onClick, children, text, style, disabled }) => {
     return (
         <button
             className={`button-base ${className || ''}`}
@@ -8,7 +8,7 @@ const Button = ({ className, onClick, text, style, disabled }) => {
             style={style || {}}
             disabled={disabled || false}
         >
-            {text}
+            {children || text}
         </button>
     );
 };

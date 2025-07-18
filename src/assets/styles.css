@@ -179,7 +179,7 @@
 }
 
 .button-base {
-    padding: 12px 24px;
+    padding: 14px 28px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -189,6 +189,9 @@
     transition: background-color 0.2s, transform 0.2s;
     color: #fff;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .button-primary {
@@ -214,6 +217,9 @@
 .button-reinitialiser {
     background-color: #e53935;
     color: #fff;
+    padding: 14px 28px;
+    font-size: 16px;
+    width: 250px;
 }
 
 .button-reinitialiser:hover {
@@ -232,33 +238,58 @@
 }
 
 .button-jour {
-    background-color: #4a90e2;
-    color: #fff;
+    background-color: #1e88e5 !important;
+    color: #fff !important;
+    padding: 8px 16px !important;
+    font-size: 12px !important;
+    border: none !important;
+    border-radius: 4px !important;
+    text-align: center !important;
+    min-width: 100px !important;
+    min-height: 60px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
-.button-jour:hover {
-    background-color: #357abd;
-    transform: scale(1.05);
+.button-jour:hover,
+.button-jour:focus,
+.button-jour:active {
+    background-color: #1e88e5 !important;
+    color: #fff !important;
+    outline: none !important;
+    transform: none !important;
 }
 
 .button-jour.selected {
-    background-color: #f28c38;
-    color: #fff;
+    background-color: #000000 !important;
+    color: #ffffff !important;
 }
 
-.button-jour.selected:hover {
-    background-color: #d9742f;
-    transform: scale(1.05);
+.day-button-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.4 !important;
+    font-family: 'Roboto', sans-serif;
+    font-size: 12px !important;
 }
 
 .button-validate {
     background-color: #4caf50;
     color: #fff;
+    padding: 14px 28px;
+    font-size: 16px;
+    width: 250px;
 }
 
 .button-validate:hover {
     background-color: #388e3c;
     transform: scale(1.05);
+}
+
+.button-validate input[type="file"] {
+    display: none;
 }
 
 .month-button {
@@ -299,13 +330,20 @@
     font-family: 'Roboto', sans-serif;
     font-size: 14px;
     border: 1px solid #ccc;
-    width: 200px;
+    width: 250px;
 }
 
 .shop-add-button {
-    padding: 8px;
-    font-size: 14px;
-    width: 200px;
+    padding: 14px 28px;
+    font-size: 16px;
+    width: 250px;
+    background-color: #4caf50;
+    color: #fff;
+}
+
+.shop-add-button:hover {
+    background-color: #388e3c;
+    transform: scale(1.05);
 }
 
 .shop-list {
@@ -321,29 +359,36 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    max-width: 200px;
+    max-width: 250px;
 }
 
 .shop-button {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 12px;
-    border-radius: 6px;
+    padding: 14px 28px;
+    border-radius: 4px;
     font-family: 'Roboto', sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 500;
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
-    width: 200px;
+    width: 250px;
+    background-color: #1e88e5;
+    color: #fff;
 }
 
 .shop-button:hover {
+    background-color: #1565c0;
     transform: scale(1.05);
 }
 
 .shop-button:active {
     transform: scale(0.95);
+}
+
+.shop-button input[type="file"] {
+    display: none;
 }
 
 .shop-button .delete-icon {
@@ -369,13 +414,20 @@
     font-family: 'Roboto', sans-serif;
     font-size: 14px;
     border: 1px solid #ccc;
-    width: 200px;
+    width: 250px;
 }
 
 .employee-add-button {
-    padding: 8px;
-    font-size: 14px;
-    width: 200px;
+    padding: 14px 28px;
+    font-size: 16px;
+    width: 250px;
+    background-color: #4caf50;
+    color: #fff;
+}
+
+.employee-add-button:hover {
+    background-color: #388e3c;
+    transform: scale(1.05);
 }
 
 .employee-list {
@@ -391,24 +443,27 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    max-width: 200px;
+    max-width: 250px;
 }
 
 .employee-button {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 12px;
-    border-radius: 6px;
+    padding: 14px 28px;
+    border-radius: 4px;
     font-family: 'Roboto', sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 500;
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
-    width: 200px;
+    width: 250px;
+    background-color: #1e88e5;
+    color: #fff;
 }
 
 .employee-button:hover {
+    background-color: #1565c0;
     transform: scale(1.05);
 }
 
@@ -434,8 +489,8 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    align-items: center;
     margin: 15px 0;
+    align-items: center;
 }
 
 .month-select,
@@ -444,9 +499,9 @@
     padding: 14px 16px;
     border-radius: 4px;
     font-family: 'Roboto', sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     border: 1px solid #ccc;
-    width: 200px;
+    width: 250px;
     background-color: #fff;
     height: 52px;
 }
@@ -464,24 +519,27 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    max-width: 200px;
+    max-width: 250px;
 }
 
 .saved-week-button {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 12px;
-    border-radius: 6px;
+    padding: 14px 28px;
+    border-radius: 4px;
     font-family: 'Roboto', sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 500;
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
-    width: 200px;
+    width: 250px;
+    background-color: #1e88e5;
+    color: #fff;
 }
 
 .saved-week-button:hover {
+    background-color: #1565c0;
     transform: scale(1.05);
 }
 
@@ -492,6 +550,11 @@
 .date-icon {
     margin-left: 10px;
     color: #1e88e5;
+}
+
+.table-container {
+    overflow-x: auto;
+    width: 100%;
 }
 
 .planning-table {
@@ -506,26 +569,86 @@
     position: sticky;
     left: 0;
     background: #fff;
-    border-right: 1px solid #ddd;
-    width: 200px;
+    border: 2px solid #333;
+    width: 80px;
     font-size: 16px;
     text-align: left;
     padding: 8px;
     white-space: nowrap;
+    z-index: 30;
+    background-clip: padding-box;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
 }
 
-.fixed-col.header {
-    text-align: right;
+.fixed-col.employee {
+    text-align: left;
+}
+
+.fixed-col.employee-0 {
+    background-color: #e6f0fa;
+}
+
+.fixed-col.employee-1 {
+    background-color: #e6ffed;
+}
+
+.fixed-col.employee-2 {
+    background-color: #ffe6e6;
+}
+
+.fixed-col.employee-3 {
+    background-color: #d0f0fa;
+}
+
+.fixed-col.employee-4 {
+    background-color: #f0e6fa;
+}
+
+.fixed-col.employee-5 {
+    background-color: #fffde6;
+}
+
+.fixed-col.employee-6 {
+    background-color: #d6e6ff;
 }
 
 .scrollable-col {
-    width: 36px;
-    font-size: 16px;
+    width: 80px;
+    font-size: 14px;
     text-align: center;
-    border: 1px solid #ddd;
+    border: 2px solid #333;
     padding: 8px;
     cursor: pointer;
-    height: 52px;
+    height: 36px;
+    white-space: nowrap;
+}
+
+.scrollable-col.clicked-0 {
+    background-color: #e6f0fa;
+}
+
+.scrollable-col.clicked-1 {
+    background-color: #e6ffed;
+}
+
+.scrollable-col.clicked-2 {
+    background-color: #ffe6e6;
+}
+
+.scrollable-col.clicked-3 {
+    background-color: #d0f0fa;
+}
+
+.scrollable-col.clicked-4 {
+    background-color: #f0e6fa;
+}
+
+.scrollable-col.clicked-5 {
+    background-color: #fffde6;
+}
+
+.scrollable-col.clicked-6 {
+    background-color: #d6e6ff;
 }
 
 .scrollable-col:hover {
@@ -637,13 +760,22 @@
     font-size: 14px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    width: 200px;
+    width: 250px;
 }
 
 .form-group div label {
     padding: 6px 12px;
     font-size: 16px;
     width: auto;
+}
+
+.form-control {
+    padding: 8px;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    width: 250px;
 }
 
 .target-days-grid {
@@ -765,13 +897,13 @@
     }
 
     .shop-add-button {
-        padding: 10px;
+        padding: 14px 28px;
         font-size: 16px;
         width: 250px;
     }
 
     .shop-button {
-        padding: 10px 14px;
+        padding: 14px 28px;
         font-size: 16px;
         width: 250px;
     }
@@ -875,14 +1007,20 @@
 
     .button-validate {
         width: 180px;
-        padding: 6px;
-        font-size: 13px;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .button-reinitialiser {
+        width: 180px;
+        padding: 8px 16px;
+        font-size: 14px;
     }
 
     .navigation-buttons .button-base {
         width: 180px;
         height: 44px;
-        font-size: 13px;
+        font-size: 14px;
         padding: 8px 16px;
         color: #fff;
         text-align: center;
@@ -897,9 +1035,14 @@
     }
 
     .scrollable-col {
-        width: 32px;
-        font-size: 14px;
-        height: 44px;
+        width: 70px;
+        font-size: 13px;
+        height: 32px;
+    }
+
+    .fixed-col {
+        width: 60px;
+        font-size: 13px;
     }
 }
 
@@ -989,8 +1132,14 @@
 
     .button-validate {
         width: 160px;
-        padding: 5px;
-        font-size: 12px;
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+
+    .button-reinitialiser {
+        width: 160px;
+        padding: 6px 12px;
+        font-size: 14px;
     }
 
     .navigation-buttons .button-base {
@@ -1011,28 +1160,25 @@
     }
 
     .scrollable-col {
-        width: 28px;
+        width: 60px;
         font-size: 12px;
-        height: 40px;
+        height: 28px;
     }
-}
 
-.day-button-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    line-height: 1.2;
-    font-size: 14px;
+    .fixed-col {
+        width: 50px;
+        font-size: 12px;
+    }
 }
 
 @media (max-width: 768px) {
     .day-button-content {
-        font-size: 12px;
+        font-size: 10px !important;
     }
 }
 
 @media (max-width: 414px) {
     .day-button-content {
-        font-size: 10px;
+        font-size: 8px !important;
     }
 }

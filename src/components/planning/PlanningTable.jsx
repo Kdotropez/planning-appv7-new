@@ -1,101 +1,149 @@
-import React from 'react';
-import { format, addDays, addMinutes, parse, differenceInMinutes } from 'date-fns';
+import React, { useState } from 'react';
+import { format, addMinutes, addDays } from 'date-fns';
 import '../../assets/styles.css';
 
-const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, toggleSlot, currentDay }) => {
-    const pastelColors = ['#e6f0fa', '#e6ffed', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#d6e6ff'];
+const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, toggleSlot, currentDay, calculateEmployeeDailyHours }) => {
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragEmployee, setDragEmployee] = useState(null);
+    const [dragDayIndex, setDragDayIndex] = useState(null);
+    const [dragValue, setDragValue] = useState(null);
+    const [hasMoved, setHasMoved] = useState(false);
 
-    const formatTimeSlot = (time) => {
-        if (!time || typeof time !== 'string' || !time.includes(':')) return '';
-        const [hours, minutes] = time.split(':').map(part => part.trim());
-        if (!hours || !minutes || isNaN(parseInt(hours)) || isNaN(parseInt(minutes))) return '';
-        return `${parseInt(hours)} h ${minutes.padStart(2, '0')}`;
-    };
+    // Valider selectedWeek
+    let dayKey = '';
+    try {
+        if (!selectedWeek || isNaN(new Date(selectedWeek).getTime())) {
+            throw new Error('Invalid selectedWeek');
+        }
+        dayKey = format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd');
+    } catch (error) {
+        console.error('Invalid time value for selectedWeek:', selectedWeek, error);
+        return (
+            <div className="planning-container">
+                <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: '#e53935' }}>
+                    Erreur: Date de semaine non valide.
+                </p>
+            </div>
+        );
+    }
 
     const getEndTime = (startTime, interval) => {
-        if (!startTime || !interval) return '';
+        if (!startTime) return '-';
         const [hours, minutes] = startTime.split(':').map(Number);
-        if (isNaN(hours) || isNaN(minutes)) return '';
         const date = new Date(2025, 0, 1, hours, minutes);
-        return format(addMinutes(date, interval), 'H:mm');
+        return format(addMinutes(date, interval), 'HH:mm');
     };
 
-    const calculateTotalHours = (employee, day) => {
-        if (!planning?.[employee]?.[day]) {
-            return 0;
+    const handleMouseDown = (employee, slotIndex, dayIndex) => {
+        if (!config?.timeSlots?.length) return;
+        setIsDragging(true);
+        setDragEmployee(employee);
+        setDragDayIndex(dayIndex);
+        const currentValue = planning[employee]?.[dayKey]?.[slotIndex] || false;
+        setDragValue(!currentValue);
+        toggleSlot(employee, slotIndex, dayIndex, !currentValue);
+        setHasMoved(false);
+    };
+
+    const handleMouseMove = (employee, slotIndex, dayIndex) => {
+        if (isDragging && employee === dragEmployee && dayIndex === dragDayIndex && config?.timeSlots?.length) {
+            setHasMoved(true);
+            toggleSlot(employee, slotIndex, dayIndex, dragValue);
         }
-        return planning[employee][day].reduce((total, slot, index) => {
-            if (!slot || !config.timeSlots[index]) return total;
-            const timeSlot = config.timeSlots[index];
-            if (!timeSlot || typeof timeSlot !== 'string') return total;
-            const match = timeSlot.match(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/);
-            if (!match) return total;
-            const [, start, end] = match;
-            const startTime = parse(start, 'H:mm', new Date());
-            const endTime = parse(end, 'H:mm', new Date());
-            if (endTime < startTime) endTime.setDate(endTime.getDate() + 1);
-            return total + (slot ? differenceInMinutes(endTime, startTime) / 60 : 0);
-        }, 0).toFixed(1);
     };
 
-    if (!config?.timeSlots || !Array.isArray(config.timeSlots) || config.timeSlots.length === 0) {
-        return <p className="error" style={{ fontFamily: 'Roboto, sans-serif', color: '#e53935', textAlign: 'center' }}>Erreur: Configuration des tranches horaires non valide.</p>;
-    }
+    const handleMouseUp = () => {
+        setIsDragging(false);
+        setDragEmployee(null);
+        setDragDayIndex(null);
+        setDragValue(null);
+        setHasMoved(false);
+    };
 
-    if (!selectedEmployees || selectedEmployees.length === 0) {
-        return <p className="error" style={{ fontFamily: 'Roboto, sans-serif', color: '#e53935', textAlign: 'center' }}>Erreur: Aucun employé sélectionné.</p>;
-    }
+    const handleTouchStart = (employee, slotIndex, dayIndex, e) => {
+        e.preventDefault();
+        if (!config?.timeSlots?.length) return;
+        setIsDragging(true);
+        setDragEmployee(employee);
+        setDragDayIndex(dayIndex);
+        const currentValue = planning[employee]?.[dayKey]?.[slotIndex] || false;
+        setDragValue(!currentValue);
+        toggleSlot(employee, slotIndex, dayIndex, !currentValue);
+        setHasMoved(false);
+    };
+
+    const handleTouchMove = (employee, slotIndex, dayIndex, e) => {
+        if (isDragging && config?.timeSlots?.length) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (element && element.dataset.employee === employee && element.dataset.dayIndex === String(dayIndex)) {
+                const slotIndex = parseInt(element.dataset.slotIndex, 10);
+                if (!isNaN(slotIndex)) {
+                    setHasMoved(true);
+                    toggleSlot(employee, slotIndex, dayIndex, dragValue);
+                }
+            }
+        }
+    };
+
+    const handleTouchEnd = () => {
+        setIsDragging(false);
+        setDragEmployee(null);
+        setDragDayIndex(null);
+        setDragValue(null);
+        setHasMoved(false);
+    };
 
     return (
         <div className="table-container">
             <table className="planning-table">
                 <thead>
                     <tr>
-                        <th className="fixed-col header">DE</th>
-                        {config.timeSlots.map((_, index) => (
-                            <th key={`slot-${index}`} className="scrollable-col">{formatTimeSlot(config.timeSlots[index].split('-')[0])}</th>
+                        <th className="fixed-col">DE</th>
+                        {config.timeSlots && config.timeSlots.map((timeSlot, index) => (
+                            <th key={index} className="scrollable-col">{timeSlot}</th>
                         ))}
-                        <th className="fixed-col header">Total</th>
                     </tr>
                     <tr>
-                        <th className="fixed-col header">À</th>
-                        {config.timeSlots.map((_, index) => (
-                            <th key={`slot-end-${index}`} className="scrollable-col">
-                                {index < config.timeSlots.length - 1
-                                    ? formatTimeSlot(config.timeSlots[index + 1].split('-')[0])
-                                    : formatTimeSlot(getEndTime(config.timeSlots[config.timeSlots.length - 1].split('-')[0], config.interval))}
+                        <th className="fixed-col">À</th>
+                        {config.timeSlots && config.timeSlots.map((timeSlot, index) => (
+                            <th key={index} className="scrollable-col">
+                                {getEndTime(timeSlot.split('-')[0], config.interval || 30)}
                             </th>
                         ))}
-                        <th className="fixed-col header"></th>
                     </tr>
                 </thead>
                 <tbody>
                     {selectedEmployees.map((employee, empIndex) => (
                         <tr key={employee}>
-                            <td className="fixed-col">{employee.toUpperCase()} ({calculateTotalHours(employee, format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'))} h)</td>
-                            <td className="fixed-col"></td>
-                            {config.timeSlots.map((slot, slotIndex) => {
-                                const dayKey = format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd');
-                                const isChecked = planning?.[employee]?.[dayKey]?.[slotIndex] || false;
-                                console.log(`Render cell - Employee: ${employee}, Day: ${dayKey}, Slot: ${slot}, SlotIndex: ${slotIndex}, IsChecked: ${isChecked}, Slots:`, planning?.[employee]?.[dayKey] || []);
-                                return (
-                                    <td
-                                        key={`${employee}-slot-${slotIndex}`}
-                                        className="scrollable-col"
-                                        style={{
-                                            backgroundColor: isChecked ? pastelColors[empIndex % pastelColors.length] : '#fff',
-                                            cursor: 'pointer'
-                                        }}
-                                        onClick={() => {
-                                            console.log(`Click cell - Employee: ${employee}, Day: ${dayKey}, SlotIndex: ${slotIndex}, Slot: ${slot}`);
-                                            toggleSlot(employee, slotIndex, currentDay);
-                                        }}
-                                    >
-                                        {isChecked ? '✅' : ''}
-                                    </td>
-                                );
-                            })}
-                            <td className="fixed-col">{calculateTotalHours(employee, format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'))} h</td>
+                            <td className={`fixed-col employee employee-${empIndex % 7}`}>
+                                {employee} ({calculateEmployeeDailyHours(employee, dayKey, planning).toFixed(1)} h)
+                            </td>
+                            {config.timeSlots && config.timeSlots.map((timeSlot, index) => (
+                                <td
+                                    key={`${employee}-${dayKey}-${index}`}
+                                    className={`scrollable-col ${planning[employee]?.[dayKey]?.[index] ? `clicked-${empIndex % 7}` : ''}`}
+                                    style={{ outline: 'none' }}
+                                    data-employee={employee}
+                                    data-slot-index={index}
+                                    data-day-index={currentDay}
+                                    data-testid={`slot-${employee}-${dayKey}-${index}`}
+                                    onClick={() => {
+                                        if (!hasMoved) {
+                                            toggleSlot(employee, index, currentDay);
+                                        }
+                                    }}
+                                    onMouseDown={() => handleMouseDown(employee, index, currentDay)}
+                                    onMouseMove={() => handleMouseMove(employee, index, currentDay)}
+                                    onMouseUp={handleMouseUp}
+                                    onTouchStart={(e) => handleTouchStart(employee, index, currentDay, e)}
+                                    onTouchMove={(e) => handleTouchMove(employee, index, currentDay, e)}
+                                    onTouchEnd={handleTouchEnd}
+                                >
+                                    {planning[employee]?.[dayKey]?.[index] ? '✅' : ''}
+                                </td>
+                            ))}
                         </tr>
                     ))}
                 </tbody>

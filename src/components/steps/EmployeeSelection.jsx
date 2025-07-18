@@ -1,11 +1,20 @@
-﻿import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
-import '../../assets/styles.css';
+import '@/assets/styles.css';
 
 const EmployeeSelection = ({ selectedEmployees, setSelectedEmployees, selectedShop, selectedWeek, setStep, setFeedback }) => {
     const [newEmployee, setNewEmployee] = useState('');
-    const employees = loadFromLocalStorage(`employees_${selectedShop}`, []) || [];
+    const [employees, setEmployees] = useState(loadFromLocalStorage(`employees_${selectedShop}`, []) || []);
+
+    useEffect(() => {
+        const shopEmployees = loadFromLocalStorage(`employees_${selectedShop}`, []);
+        setEmployees(shopEmployees);
+        console.log(`Loaded employees for shop ${selectedShop}:`, shopEmployees);
+        const storedSelectedEmployees = loadFromLocalStorage(`selected_employees_${selectedShop}_${selectedWeek}`, shopEmployees);
+        setSelectedEmployees(storedSelectedEmployees);
+        console.log(`Loaded selected employees for ${selectedShop}_${selectedWeek}:`, storedSelectedEmployees);
+    }, [selectedShop, selectedWeek, setSelectedEmployees]);
 
     const handleAddEmployee = () => {
         if (!newEmployee.trim()) {
@@ -19,6 +28,7 @@ const EmployeeSelection = ({ selectedEmployees, setSelectedEmployees, selectedSh
         }
         const updatedEmployees = [...employees, upperCaseEmployee];
         saveToLocalStorage(`employees_${selectedShop}`, updatedEmployees);
+        setEmployees(updatedEmployees);
         setNewEmployee('');
         setFeedback('Succès: Employé ajouté.');
     };
@@ -26,16 +36,20 @@ const EmployeeSelection = ({ selectedEmployees, setSelectedEmployees, selectedSh
     const handleRemoveEmployee = (employee) => {
         const updatedEmployees = employees.filter(e => e !== employee);
         saveToLocalStorage(`employees_${selectedShop}`, updatedEmployees);
-        setSelectedEmployees(selectedEmployees.filter(e => e !== employee));
+        setEmployees(updatedEmployees);
+        const newSelectedEmployees = selectedEmployees.filter(e => e !== employee);
+        setSelectedEmployees(newSelectedEmployees);
+        saveToLocalStorage(`selected_employees_${selectedShop}_${selectedWeek}`, newSelectedEmployees);
         setFeedback('Succès: Employé supprimé.');
     };
 
     const handleSelectEmployee = (employee) => {
-        if (selectedEmployees.includes(employee)) {
-            setSelectedEmployees(selectedEmployees.filter(e => e !== employee));
-        } else {
-            setSelectedEmployees([...selectedEmployees, employee]);
-        }
+        const newSelectedEmployees = selectedEmployees.includes(employee)
+            ? selectedEmployees.filter(e => e !== employee)
+            : [...selectedEmployees, employee];
+        setSelectedEmployees(newSelectedEmployees);
+        saveToLocalStorage(`selected_employees_${selectedShop}_${selectedWeek}`, newSelectedEmployees);
+        console.log('Updated selected employees:', newSelectedEmployees);
     };
 
     const handleNext = () => {
@@ -45,20 +59,21 @@ const EmployeeSelection = ({ selectedEmployees, setSelectedEmployees, selectedSh
         }
         saveToLocalStorage(`selected_employees_${selectedShop}_${selectedWeek}`, selectedEmployees);
         setStep(5);
-        setFeedback('Succès: Employés validés.');
     };
 
     const handleReset = () => {
         setNewEmployee('');
         setSelectedEmployees([]);
         saveToLocalStorage(`employees_${selectedShop}`, []);
+        saveToLocalStorage(`selected_employees_${selectedShop}_${selectedWeek}`, []);
+        setEmployees([]);
         setFeedback('Succès: Liste des employés réinitialisée.');
     };
 
     console.log('Rendering EmployeeSelection with employees:', employees, 'selectedEmployees:', selectedEmployees);
 
     return (
-        <div className="step-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div className="step-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '465px' }}>
             <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '15px' }}>
                 Sélection des employés
             </h2>
@@ -70,6 +85,7 @@ const EmployeeSelection = ({ selectedEmployees, setSelectedEmployees, selectedSh
                     type="text"
                     value={newEmployee}
                     onChange={(e) => setNewEmployee(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddEmployee(); }}
                     placeholder="Nom de l'employé"
                     className="employee-input-field"
                 />
@@ -81,7 +97,7 @@ const EmployeeSelection = ({ selectedEmployees, setSelectedEmployees, selectedSh
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                 />
             </div>
-            <div className="employee-list" style={{ marginBottom: '15px', width: '100%', maxWidth: '400px' }}>
+            <div className="employee-list" style={{ marginBottom: '15px', width: '100%', maxWidth: '400px', maxHeight: '200px', overflowY: 'auto' }}>
                 <label style={{ fontFamily: 'Roboto, sans-serif', fontSize: '16px', marginBottom: '5px', display: 'block', textAlign: 'center' }}>
                     Employés disponibles
                 </label>
@@ -116,7 +132,7 @@ const EmployeeSelection = ({ selectedEmployees, setSelectedEmployees, selectedSh
                     </ul>
                 )}
             </div>
-            <div className="button-group" style={{ display: 'flex', justifyContent: 'space-between', gap: '15px', marginTop: '20px', width: '100%', maxWidth: '400px' }}>
+            <div className="button-group" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: 'auto', width: '100%', maxWidth: '400px' }}>
                 <Button
                     text="Retour"
                     onClick={() => setStep(3)}

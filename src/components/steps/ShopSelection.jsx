@@ -1,25 +1,26 @@
 ﻿import React, { useState } from 'react';
 import Button from '../common/Button';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
-import '../../assets/styles.css';
+import { FaUpload } from 'react-icons/fa';
+import '@/assets/styles.css';
 
-const ShopSelection = ({ selectedShop, setSelectedShop, setStep, setFeedback }) => {
+const ShopSelection = ({ shops, selectedShop, setSelectedShop, onNext, onReset, setFeedback, setStep }) => {
     const [newShop, setNewShop] = useState('');
-    const shops = loadFromLocalStorage('shops', []) || [];
 
     const handleAddShop = () => {
         if (!newShop.trim()) {
-            setFeedback('Erreur: Le nom du magasin ne peut pas être vide.');
+            setFeedback('Erreur: Le nom de la boutique ne peut pas être vide.');
             return;
         }
-        if (shops.includes(newShop)) {
-            setFeedback('Erreur: Ce magasin existe déjà.');
+        const upperCaseShop = newShop.trim().toUpperCase();
+        if (shops.includes(upperCaseShop)) {
+            setFeedback('Erreur: Cette boutique existe déjà.');
             return;
         }
-        const updatedShops = [...shops, newShop];
+        const updatedShops = [...shops, upperCaseShop];
         saveToLocalStorage('shops', updatedShops);
         setNewShop('');
-        setFeedback('Succès: Magasin ajouté.');
+        setFeedback('Succès: Boutique ajoutée.');
     };
 
     const handleRemoveShop = (shop) => {
@@ -28,45 +29,86 @@ const ShopSelection = ({ selectedShop, setSelectedShop, setStep, setFeedback }) 
         if (selectedShop === shop) {
             setSelectedShop('');
         }
-        setFeedback('Succès: Magasin supprimé.');
+        setFeedback('Succès: Boutique supprimée.');
     };
 
     const handleSelectShop = (shop) => {
         setSelectedShop(shop);
+        setFeedback('');
     };
 
     const handleNext = () => {
+        console.log('handleNext called with selectedShop:', selectedShop);
         if (!selectedShop) {
-            setFeedback('Erreur: Veuillez sélectionner un magasin.');
+            setFeedback('Erreur: Veuillez sélectionner une boutique.');
             return;
         }
+        if (typeof setStep !== 'function') {
+            console.error('setStep is not a function:', setStep);
+            setFeedback('Erreur: Action Valider non disponible.');
+            return;
+        }
+        console.log('Calling onNext with shop:', selectedShop);
+        onNext(selectedShop);
         setStep(3);
-        setFeedback('Succès: Magasin validé.');
     };
 
     const handleReset = () => {
+        if (typeof onReset !== 'function') {
+            console.error('onReset is not a function:', onReset);
+            setFeedback('Erreur: Action Réinitialiser non disponible.');
+            return;
+        }
         setNewShop('');
         setSelectedShop('');
         saveToLocalStorage('shops', []);
-        setFeedback('Succès: Liste des magasins réinitialisée.');
+        onReset({ feedback: 'Succès: Liste des boutiques réinitialisée.' });
+    };
+
+    const handleImport = async () => {
+        try {
+            const [handle] = await window.showOpenFilePicker({
+                types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }],
+            });
+            const file = await handle.getFile();
+            const text = await file.text();
+            const importData = JSON.parse(text);
+            // Importer les boutiques
+            saveToLocalStorage('shops', importData.shops || []);
+            // Importer les employés, configurations et plannings par boutique
+            Object.keys(importData.shops || []).forEach(shop => {
+                saveToLocalStorage(`employees_${shop}`, importData[shop]?.employees || []);
+                saveToLocalStorage(`timeSlotConfig_${shop}`, importData[shop]?.timeSlotConfig || {});
+                Object.keys(importData[shop]?.weeks || {}).forEach(weekKey => {
+                    saveToLocalStorage(`planning_${shop}_${weekKey}`, importData[shop].weeks[weekKey].planning || {});
+                    saveToLocalStorage(`selected_employees_${shop}_${weekKey}`, importData[shop].weeks[weekKey].selectedEmployees || []);
+                });
+            });
+            setFeedback('Importation réussie.');
+            console.log('Imported data:', importData);
+        } catch (error) {
+            setFeedback('Erreur lors de l’importation.');
+            console.error('Import error:', error);
+        }
     };
 
     console.log('Rendering ShopSelection with shops:', shops, 'selectedShop:', selectedShop);
 
     return (
-        <div className="step-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div className="step-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '465px' }}>
             <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '15px' }}>
-                Sélection du magasin
+                Sélection de la boutique
             </h2>
             <div className="shop-input" style={{ marginBottom: '15px', width: '100%', maxWidth: '400px' }}>
                 <label style={{ fontFamily: 'Roboto, sans-serif', fontSize: '16px', marginBottom: '5px', display: 'block', textAlign: 'center' }}>
-                    Ajouter un magasin
+                    Ajouter une boutique
                 </label>
                 <input
                     type="text"
                     value={newShop}
                     onChange={(e) => setNewShop(e.target.value)}
-                    placeholder="Nom du magasin"
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddShop(); }}
+                    placeholder="Nom de la boutique"
                     className="shop-input-field"
                 />
                 <Button
@@ -77,20 +119,20 @@ const ShopSelection = ({ selectedShop, setSelectedShop, setStep, setFeedback }) 
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                 />
             </div>
-            <div className="shop-list" style={{ marginBottom: '15px', width: '100%', maxWidth: '400px' }}>
+            <div className="shop-list" style={{ marginBottom: '15px', width: '100%', maxWidth: '400px', maxHeight: '150px', overflowY: 'auto' }}>
                 <label style={{ fontFamily: 'Roboto, sans-serif', fontSize: '16px', marginBottom: '5px', display: 'block', textAlign: 'center' }}>
-                    Magasins disponibles
+                    Boutiques disponibles
                 </label>
                 {shops.length === 0 ? (
                     <p style={{ fontFamily: 'Roboto, sans-serif', color: '#e53935', textAlign: 'center' }}>
-                        Aucun magasin disponible.
+                        Aucune boutique disponible.
                     </p>
                 ) : (
                     <ul style={{ listStyle: 'none', padding: 0 }}>
                         {shops.map(shop => (
                             <li key={shop} className="shop-item">
                                 <Button
-                                    text={shop}
+                                    text={shop.toUpperCase()}
                                     onClick={() => handleSelectShop(shop)}
                                     style={{
                                         backgroundColor: selectedShop === shop ? '#f28c38' : '#f0f0f0',
@@ -104,7 +146,7 @@ const ShopSelection = ({ selectedShop, setSelectedShop, setStep, setFeedback }) 
                                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = selectedShop === shop ? '#d9742f' : '#e0e0e0'}
                                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = selectedShop === shop ? '#f28c38' : '#f0f0f0'}
                                 >
-                                    {shop}
+                                    {shop.toUpperCase()}
                                     <span className="delete-icon" onClick={() => handleRemoveShop(shop)}>🗑️</span>
                                 </Button>
                             </li>
@@ -112,10 +154,17 @@ const ShopSelection = ({ selectedShop, setSelectedShop, setStep, setFeedback }) 
                     </ul>
                 )}
             </div>
-            <div className="button-group" style={{ display: 'flex', justifyContent: 'space-between', gap: '15px', marginTop: '20px', width: '100%', maxWidth: '400px' }}>
+            <div className="button-group" style={{ display: 'flex', justifyContent: 'space-between', gap: '15px', marginTop: 'auto', width: '100%', maxWidth: '400px' }}>
                 <Button
                     text="Retour"
-                    onClick={() => setStep(1)}
+                    onClick={() => {
+                        if (typeof setStep !== 'function') {
+                            console.error('setStep is not a function:', setStep);
+                            setFeedback('Erreur: Action Retour non disponible.');
+                            return;
+                        }
+                        setStep(1);
+                    }}
                     style={{ backgroundColor: '#000000', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#333'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#000000'}
@@ -134,6 +183,15 @@ const ShopSelection = ({ selectedShop, setSelectedShop, setStep, setFeedback }) 
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#c62828'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#e53935'}
                 />
+                <Button
+                    text="Importer"
+                    onClick={handleImport}
+                    style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                >
+                    <FaUpload /> Importer
+                </Button>
             </div>
             <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#ccc' }}>
                 Klick-Planning - copyright © Nicolas Lefevre

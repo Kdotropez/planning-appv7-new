@@ -2,7 +2,7 @@
 import { format, isAfter, parse } from 'date-fns';
 import Button from '../common/Button';
 import { saveToLocalStorage } from '../../utils/localStorage';
-import '../../assets/styles.css';
+import '@/assets/styles.css';
 
 const TimeSlotConfig = ({ config, setConfig, setStep, setFeedback }) => {
     const intervals = [15, 30, 60];
@@ -32,40 +32,42 @@ const TimeSlotConfig = ({ config, setConfig, setStep, setFeedback }) => {
 
     const handleNext = () => {
         if (!config.startTime || !config.endTime) {
-            setFeedback('Erreur: Veuillez sélectionner une heure de début et de fin.');
-            return;
+            return; // Supprimé : setFeedback('Erreur: Veuillez sélectionner une heure de début et de fin.');
         }
         if (!validateTimeFormat(config.startTime)) {
-            setFeedback('Erreur: Heure de début invalide (HH:mm).');
-            return;
+            return; // Supprimé : setFeedback('Erreur: Heure de début invalide (HH:mm).');
         }
         if (!validateTimeFormat(config.endTime)) {
-            setFeedback('Erreur: Heure de fin invalide (HH:mm).');
-            return;
+            return; // Supprimé : setFeedback('Erreur: Heure de fin invalide (HH:mm).');
         }
         const startTime = config.startTime === 'other' ? config.startTimeCustom : config.startTime;
         const endTime = config.endTime === 'other' ? config.endTimeCustom : config.endTime;
         if (!startTime || !endTime) {
-            setFeedback('Erreur: Veuillez spécifier une heure personnalisée pour l\'option "Autre".');
-            return;
+            return; // Supprimé : setFeedback('Erreur: Veuillez spécifier une heure personnalisée pour l\'option "Autre".');
         }
         const timeSlots = generateTimeSlots(startTime, endTime, config.interval);
         if (timeSlots.length === 0) {
-            setFeedback('Erreur: Aucun créneau horaire défini.');
-            return;
+            return; // Supprimé : setFeedback('Erreur: Aucun créneau horaire défini.');
         }
         const updatedConfig = { ...config, timeSlots, startTime, endTime };
         saveToLocalStorage('timeSlotConfig', updatedConfig);
         setConfig(updatedConfig);
         setStep(2);
-        setFeedback('Succès: Configuration des tranches enregistrée.');
+        // Supprimé : setFeedback('Succès: Configuration des tranches enregistrée.');
     };
 
     const handleReset = () => {
-        const defaultConfig = { timeSlots: [], interval: 30, startTime: '', endTime: '', startTimeCustom: '', endTimeCustom: '' };
+        const defaultConfig = { 
+            timeSlots: generateTimeSlots('09:00', '01:00', 30), 
+            interval: 30, 
+            startTime: '09:00', 
+            endTime: '01:00', 
+            startTimeCustom: '', 
+            endTimeCustom: '' 
+        };
         setConfig(defaultConfig);
         saveToLocalStorage('timeSlotConfig', defaultConfig);
-        setFeedback('Succès: Configuration réinitialisée.');
+        // Supprimé : setFeedback('Succès: Configuration réinitialisée.');
     };
 
     const handleImport = (event) => {
@@ -76,15 +78,14 @@ const TimeSlotConfig = ({ config, setConfig, setStep, setFeedback }) => {
             try {
                 const data = JSON.parse(e.target.result);
                 if (!data.config || !Array.isArray(data.config.timeSlots) || !data.config.interval || !data.config.startTime || !data.config.endTime) {
-                    setFeedback('Erreur: Données de configuration invalides dans le fichier importé.');
-                    return;
+                    return; // Supprimé : setFeedback('Erreur: Données de configuration invalides dans le fichier importé.');
                 }
                 setConfig(data.config);
                 saveToLocalStorage('timeSlotConfig', data.config);
-                setFeedback('Succès: Configuration importée avec succès.');
+                // Supprimé : setFeedback('Succès: Configuration importée avec succès.');
             } catch (error) {
                 console.error('Erreur lors de l\'importation:', error);
-                setFeedback('Erreur: Échec de l\'importation du fichier JSON.');
+                // Supprimé : setFeedback('Erreur: Échec de l\'importation du fichier JSON.');
             }
         };
         reader.readAsText(file);
@@ -99,7 +100,7 @@ const TimeSlotConfig = ({ config, setConfig, setStep, setFeedback }) => {
         a.download = `config_export_${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
-        setFeedback('Succès: Configuration exportée avec succès.');
+        // Supprimé : setFeedback('Succès: Configuration exportée avec succès.');
     };
 
     console.log('Rendering TimeSlotConfig with config:', config);
@@ -109,34 +110,19 @@ const TimeSlotConfig = ({ config, setConfig, setStep, setFeedback }) => {
             <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '15px' }}>
                 Configuration des tranches horaires
             </h2>
-            {config.feedback && (
-                <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: config.feedback.includes('Succès') ? '#4caf50' : '#e53935', marginBottom: '10px' }}>
-                    {config.feedback}
-                </p>
-            )}
             <div className="button-group" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px' }}>
-                <Button
-                    text="Exporter"
-                    onClick={handleExport}
-                    style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
-                />
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <Button className="button-validate" onClick={handleExport}>
+                    Exporter
+                </Button>
+                <Button className="button-validate">
+                    Importer
                     <input
                         type="file"
                         accept=".json"
                         onChange={handleImport}
                         style={{ display: 'none' }}
                     />
-                    <Button
-                        text="Importer"
-                        onClick={(e) => e.target.previousSibling.click()}
-                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
-                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
-                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
-                    />
-                </label>
+                </Button>
             </div>
             <div className="form-group" style={{ marginBottom: '15px', width: '100%', maxWidth: '400px' }}>
                 <label style={{ fontFamily: 'Roboto, sans-serif', fontSize: '16px', marginBottom: '5px', display: 'block', textAlign: 'center' }}>
@@ -251,20 +237,12 @@ const TimeSlotConfig = ({ config, setConfig, setStep, setFeedback }) => {
                 )}
             </div>
             <div className="button-group" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }}>
-                <Button
-                    text="Valider"
-                    onClick={handleNext}
-                    style={{ backgroundColor: '#4caf50', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#388e3c'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#4caf50'}
-                />
-                <Button
-                    text="Réinitialiser"
-                    onClick={handleReset}
-                    style={{ backgroundColor: '#e53935', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#c62828'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#e53935'}
-                />
+                <Button className="button-validate" onClick={handleNext}>
+                    Valider
+                </Button>
+                <Button className="button-reinitialiser" onClick={handleReset}>
+                    Réinitialiser
+                </Button>
             </div>
             <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#333' }}>
                 Klick-Planning - copyright © Nicolas Lefevre
