@@ -84,32 +84,32 @@ const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, togg
     };
 
     return (
-        <div className="table-container" onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-            <table className="planning-table">
+        <div className="table-container" style={{ width: '100%', overflowX: 'auto' }} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+            <table className="planning-table" style={{ width: '100%', tableLayout: 'auto' }}>
                 <thead>
                     <tr>
-                        <th className="fixed-col header">DE</th>
+                        <th className="fixed-col header" style={{ width: '150px', minWidth: '150px' }}>DE</th>
                         {config.timeSlots.map((slot, index) => (
-                            <th key={slot} className="scrollable-col">{slot}</th>
+                            <th key={slot} className="scrollable-col" style={{ minWidth: '60px' }}>{slot}</th>
                         ))}
-                        <th className="fixed-col header">Total</th>
+                        <th className="fixed-col header" style={{ width: '150px', minWidth: '150px' }}>Total</th>
                     </tr>
                     <tr>
-                        <th className="fixed-col header">À</th>
+                        <th className="fixed-col header" style={{ width: '150px', minWidth: '150px' }}>À</th>
                         {config.timeSlots.map((slot, index) => (
-                            <th key={slot} className="scrollable-col">
+                            <th key={slot} className="scrollable-col" style={{ minWidth: '60px' }}>
                                 {index < config.timeSlots.length - 1
                                     ? config.timeSlots[index + 1]
                                     : getEndTime(config.timeSlots[config.timeSlots.length - 1], config.interval)}
                             </th>
                         ))}
-                        <th className="fixed-col header"></th>
+                        <th className="fixed-col header" style={{ width: '150px', minWidth: '150px' }}></th>
                     </tr>
                 </thead>
                 <tbody>
                     {selectedEmployees.map((employee, employeeIndex) => (
                         <tr key={employee}>
-                            <td className={`fixed-col employee ${getEmployeeColorClass(employeeIndex)}`}>{employee}</td>
+                            <td className={`fixed-col employee ${getEmployeeColorClass(employeeIndex)}`} style={{ width: '150px', minWidth: '150px' }}>{employee}</td>
                             {config.timeSlots.map((_, slotIndex) => {
                                 const dayKey = format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd');
                                 const isChecked = planning[employee]?.[dayKey]?.[slotIndex] || false;
@@ -117,6 +117,7 @@ const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, togg
                                     <td
                                         key={slotIndex}
                                         className={`scrollable-col ${isChecked ? `clicked-${employeeIndex % 7}` : ''}`}
+                                        style={{ minWidth: '60px' }}
                                         onTouchStart={(e) => handleTouchStart(employee, slotIndex, currentDay, e)}
                                         onMouseDown={(e) => handleMouseDown(employee, slotIndex, currentDay, e)}
                                         onMouseMove={(e) => handleMouseMove(employee, slotIndex, currentDay, e)}
@@ -125,7 +126,7 @@ const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, togg
                                     </td>
                                 );
                             })}
-                            <td className="scrollable-col">
+                            <td className="scrollable-col" style={{ minWidth: '150px' }}>
                                 {calculateEmployeeDailyHours(employee, format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h
                             </td>
                         </tr>

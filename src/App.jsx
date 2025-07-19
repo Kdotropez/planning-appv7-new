@@ -29,9 +29,15 @@ const App = () => {
     useEffect(() => {
         console.log('Clearing localStorage on initial load');
         localStorage.clear();
-    }, []); // Exécuté une seule fois au montage
+    }, []);
 
-    const shops = loadFromLocalStorage('shops', ['MaBoutique', 'Boutique2']);
+    // Réinitialiser le feedback lors du changement d'étape
+    useEffect(() => {
+        console.log('Resetting feedback on step change:', step);
+        setFeedback('');
+    }, [step]);
+
+    const shops = loadFromLocalStorage('shops', []);
 
     const handleNextConfig = (newConfig) => {
         console.log('App: Setting config:', newConfig);
