@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import WeekSelection from './components/steps/WeekSelection';
 import EmployeeSelection from './components/steps/EmployeeSelection';
 import PlanningDisplay from './components/planning/PlanningDisplay';
@@ -24,6 +24,12 @@ const App = () => {
     const [feedback, setFeedback] = useState('');
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
     const [resetSource, setResetSource] = useState('');
+
+    // Vider localStorage au démarrage initial
+    useEffect(() => {
+        console.log('Clearing localStorage on initial load');
+        localStorage.clear();
+    }, []); // Exécuté une seule fois au montage
 
     const shops = loadFromLocalStorage('shops', ['MaBoutique', 'Boutique2']);
 
