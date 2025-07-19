@@ -1,39 +1,64 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
+import { importAllData } from '../../utils/backupUtils';
 import { FaUpload } from 'react-icons/fa';
 import '@/assets/styles.css';
 
-const ShopSelection = ({ shops, selectedShop, setSelectedShop, onNext, onReset, setFeedback, setStep }) => {
+const ShopSelection = ({ shops: propsShops, setShops: setPropsShops, selectedShop, setSelectedShop, onNext, onReset, setFeedback, setStep }) => {
     const [newShop, setNewShop] = useState('');
+    const [localShops, setLocalShops] = useState(loadFromLocalStorage('shops', []));
+
+    // Utiliser propsShops si fourni, sinon localShops
+    const shops = propsShops !== undefined ? propsShops : localShops;
+    const setShops = setPropsShops !== undefined ? setPropsShops : setLocalShops;
+
+    // Synchroniser l'état avec localStorage au montage
+    useEffect(() => {
+        const storedShops = loadFromLocalStorage('shops', []);
+        console.log('Initial shops from localStorage:', storedShops, 'propsShops:', propsShops);
+        if (JSON.stringify(storedShops) !== JSON.stringify(shops)) {
+            setShops(storedShops);
+        }
+    }, [shops, setShops]);
 
     const handleAddShop = () => {
+        console.log('handleAddShop called with newShop:', newShop, 'current shops:', shops);
         if (!newShop.trim()) {
             setFeedback('Erreur: Le nom de la boutique ne peut pas être vide.');
+            console.log('Add shop failed: Empty shop name');
             return;
         }
         const upperCaseShop = newShop.trim().toUpperCase();
         if (shops.includes(upperCaseShop)) {
             setFeedback('Erreur: Cette boutique existe déjà.');
+            console.log('Add shop failed: Shop already exists', upperCaseShop);
             return;
         }
         const updatedShops = [...shops, upperCaseShop];
+        console.log('Updating shops to:', updatedShops);
         saveToLocalStorage('shops', updatedShops);
+        setShops(updatedShops);
         setNewShop('');
         setFeedback('Succès: Boutique ajoutée.');
     };
 
     const handleRemoveShop = (shop) => {
+        console.log('handleRemoveShop called with shop:', shop);
         const updatedShops = shops.filter(s => s !== shop);
         saveToLocalStorage('shops', updatedShops);
+        setShops(updatedShops);
         if (selectedShop === shop) {
             setSelectedShop('');
+            saveToLocalStorage('lastPlanning', {});
         }
         setFeedback('Succès: Boutique supprimée.');
     };
 
     const handleSelectShop = (shop) => {
+        console.log('handleSelectShop called with shop:', shop);
         setSelectedShop(shop);
+        saveToLocalStorage('lastPlanning', { shop });
         setFeedback('');
     };
 
@@ -54,6 +79,7 @@ const ShopSelection = ({ shops, selectedShop, setSelectedShop, onNext, onReset, 
     };
 
     const handleReset = () => {
+        console.log('handleReset called');
         if (typeof onReset !== 'function') {
             console.error('onReset is not a function:', onReset);
             setFeedback('Erreur: Action Réinitialiser non disponible.');
@@ -62,34 +88,9 @@ const ShopSelection = ({ shops, selectedShop, setSelectedShop, onNext, onReset, 
         setNewShop('');
         setSelectedShop('');
         saveToLocalStorage('shops', []);
+        setShops([]);
+        saveToLocalStorage('lastPlanning', {});
         onReset({ feedback: 'Succès: Liste des boutiques réinitialisée.' });
-    };
-
-    const handleImport = async () => {
-        try {
-            const [handle] = await window.showOpenFilePicker({
-                types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }],
-            });
-            const file = await handle.getFile();
-            const text = await file.text();
-            const importData = JSON.parse(text);
-            // Importer les boutiques
-            saveToLocalStorage('shops', importData.shops || []);
-            // Importer les employés, configurations et plannings par boutique
-            Object.keys(importData.shops || []).forEach(shop => {
-                saveToLocalStorage(`employees_${shop}`, importData[shop]?.employees || []);
-                saveToLocalStorage(`timeSlotConfig_${shop}`, importData[shop]?.timeSlotConfig || {});
-                Object.keys(importData[shop]?.weeks || {}).forEach(weekKey => {
-                    saveToLocalStorage(`planning_${shop}_${weekKey}`, importData[shop].weeks[weekKey].planning || {});
-                    saveToLocalStorage(`selected_employees_${shop}_${weekKey}`, importData[shop].weeks[weekKey].selectedEmployees || []);
-                });
-            });
-            setFeedback('Importation réussie.');
-            console.log('Imported data:', importData);
-        } catch (error) {
-            setFeedback('Erreur lors de l’importation.');
-            console.error('Import error:', error);
-        }
     };
 
     console.log('Rendering ShopSelection with shops:', shops, 'selectedShop:', selectedShop);
@@ -106,14 +107,23 @@ const ShopSelection = ({ shops, selectedShop, setSelectedShop, onNext, onReset, 
                 <input
                     type="text"
                     value={newShop}
-                    onChange={(e) => setNewShop(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddShop(); }}
+                    onChange={(e) => {
+                        console.log('Input changed, newShop:', e.target.value);
+                        setNewShop(e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                        console.log('Key down:', e.key);
+                        if (e.key === 'Enter') handleAddShop();
+                    }}
                     placeholder="Nom de la boutique"
                     className="shop-input-field"
                 />
                 <Button
                     text="Ajouter"
-                    onClick={handleAddShop}
+                    onClick={() => {
+                        console.log('Add button clicked');
+                        handleAddShop();
+                    }}
                     style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', marginTop: '10px' }}
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
@@ -158,6 +168,7 @@ const ShopSelection = ({ shops, selectedShop, setSelectedShop, onNext, onReset, 
                 <Button
                     text="Retour"
                     onClick={() => {
+                        console.log('Retour button clicked');
                         if (typeof setStep !== 'function') {
                             console.error('setStep is not a function:', setStep);
                             setFeedback('Erreur: Action Retour non disponible.');
@@ -185,7 +196,7 @@ const ShopSelection = ({ shops, selectedShop, setSelectedShop, onNext, onReset, 
                 />
                 <Button
                     text="Importer"
-                    onClick={handleImport}
+                    onClick={() => importAllData(setFeedback, setShops, setSelectedShop, () => {})}
                     style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}

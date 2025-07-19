@@ -3,6 +3,7 @@ import { format, addDays, isMonday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { FaToggleOn, FaDownload } from 'react-icons/fa';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
+import { exportAllData } from '../../utils/backupUtils';
 import Button from '../common/Button';
 import RecapModal from './RecapModal';
 import PlanningTable from './PlanningTable';
@@ -146,44 +147,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         });
     }, [config, selectedWeek]);
 
-    const exportPlanning = async () => {
-        try {
-            const handle = await window.showSaveFilePicker({
-                suggestedName: `planning_${selectedShop}_${format(new Date(), 'yyyy-MM-dd_HHmm')}.json`,
-                types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }],
-            });
-            const writable = await handle.createWritable();
-            const exportData = {
-                shop: selectedShop,
-                employees: loadFromLocalStorage(`employees_${selectedShop}`, []),
-                timeSlotConfig: loadFromLocalStorage('timeSlotConfig', {}),
-                weeks: {}
-            };
-            const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(`planning_${selectedShop}_`));
-            storageKeys.forEach(key => {
-                const weekKey = key.replace(`planning_${selectedShop}_`, '');
-                try {
-                    const weekDate = new Date(weekKey);
-                    if (!isNaN(weekDate.getTime()) && isMonday(weekDate)) {
-                        exportData.weeks[weekKey] = {
-                            planning: loadFromLocalStorage(key, {}),
-                            selectedEmployees: loadFromLocalStorage(`selected_employees_${selectedShop}_${weekKey}`, [])
-                        };
-                    }
-                } catch (e) {
-                    console.error(`Invalid date format for key ${key}:`, e);
-                }
-            });
-            await writable.write(JSON.stringify(exportData, null, 2));
-            await writable.close();
-            setFeedback('Exportation réussie.');
-            console.log('Exported planning:', exportData);
-        } catch (error) {
-            setFeedback('Erreur lors de l’exportation.');
-            console.error('Export error:', error);
-        }
-    };
-
     if (error) {
         return (
             <div className="planning-container">
@@ -198,7 +161,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     <Button className="button-retour" onClick={onBackToShop}>Retour Boutique</Button>
                     <Button className="button-retour" onClick={onBackToWeek}>Retour Semaine</Button>
                     <Button className="button-retour" onClick={onBackToConfig}>Retour Configuration</Button>
-                    <Button className="button-primary" onClick={exportPlanning} style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}>
+                    <Button className="button-primary" onClick={() => exportAllData(setFeedback)} style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}>
                         <FaDownload /> Exporter
                     </Button>
                     <Button className="button-reinitialiser" onClick={() => {
@@ -224,7 +187,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     <Button className="button-retour" onClick={onBackToShop}>Retour Boutique</Button>
                     <Button className="button-retour" onClick={onBackToWeek}>Retour Semaine</Button>
                     <Button className="button-retour" onClick={onBackToConfig}>Retour Configuration</Button>
-                    <Button className="button-primary" onClick={exportPlanning} style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}>
+                    <Button className="button-primary" onClick={() => exportAllData(setFeedback)} style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}>
                         <FaDownload /> Exporter
                     </Button>
                     <Button className="button-reinitialiser" onClick={() => {
@@ -251,7 +214,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 <Button className="button-retour" onClick={onBackToShop}>Retour Boutique</Button>
                 <Button className="button-retour" onClick={onBackToWeek}>Retour Semaine</Button>
                 <Button className="button-retour" onClick={onBackToConfig}>Retour Configuration</Button>
-                <Button className="button-primary" onClick={exportPlanning} style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}>
+                <Button className="button-primary" onClick={() => exportAllData(setFeedback)} style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}>
                     <FaDownload /> Exporter
                 </Button>
                 <Button className="button-reinitialiser" onClick={() => {

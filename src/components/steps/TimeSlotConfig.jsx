@@ -1,10 +1,12 @@
 ﻿import React from 'react';
 import { format, isAfter, parse } from 'date-fns';
 import Button from '../common/Button';
-import { saveToLocalStorage } from '../../utils/localStorage';
+import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
+import { importAllData, exportAllData } from '../../utils/backupUtils';
+import { FaUpload } from 'react-icons/fa';
 import '@/assets/styles.css';
 
-const TimeSlotConfig = ({ config, setConfig, setStep, setFeedback }) => {
+const TimeSlotConfig = ({ config, setConfig, setStep, setFeedback, selectedShop }) => {
     const intervals = [15, 30, 60];
     const startTimeOptions = ['09:00', '09:30', '10:00', 'other'];
     const endTimeOptions = ['19:00', '20:00', '22:00', '23:00', '00:00', '01:00', '02:00', '03:00', 'other'];
@@ -32,28 +34,33 @@ const TimeSlotConfig = ({ config, setConfig, setStep, setFeedback }) => {
 
     const handleNext = () => {
         if (!config.startTime || !config.endTime) {
-            return; // Supprimé : setFeedback('Erreur: Veuillez sélectionner une heure de début et de fin.');
+            setFeedback('Erreur: Veuillez sélectionner une heure de début et de fin.');
+            return;
         }
         if (!validateTimeFormat(config.startTime)) {
-            return; // Supprimé : setFeedback('Erreur: Heure de début invalide (HH:mm).');
+            setFeedback('Erreur: Heure de début invalide (HH:mm).');
+            return;
         }
         if (!validateTimeFormat(config.endTime)) {
-            return; // Supprimé : setFeedback('Erreur: Heure de fin invalide (HH:mm).');
+            setFeedback('Erreur: Heure de fin invalide (HH:mm).');
+            return;
         }
         const startTime = config.startTime === 'other' ? config.startTimeCustom : config.startTime;
         const endTime = config.endTime === 'other' ? config.endTimeCustom : config.endTime;
         if (!startTime || !endTime) {
-            return; // Supprimé : setFeedback('Erreur: Veuillez spécifier une heure personnalisée pour l\'option "Autre".');
+            setFeedback('Erreur: Veuillez spécifier une heure personnalisée pour l\'option "Autre".');
+            return;
         }
         const timeSlots = generateTimeSlots(startTime, endTime, config.interval);
         if (timeSlots.length === 0) {
-            return; // Supprimé : setFeedback('Erreur: Aucun créneau horaire défini.');
+            setFeedback('Erreur: Aucun créneau horaire défini.');
+            return;
         }
         const updatedConfig = { ...config, timeSlots, startTime, endTime };
         saveToLocalStorage('timeSlotConfig', updatedConfig);
         setConfig(updatedConfig);
         setStep(2);
-        // Supprimé : setFeedback('Succès: Configuration des tranches enregistrée.');
+        setFeedback('Succès: Configuration des tranches enregistrée.');
     };
 
     const handleReset = () => {
@@ -67,43 +74,10 @@ const TimeSlotConfig = ({ config, setConfig, setStep, setFeedback }) => {
         };
         setConfig(defaultConfig);
         saveToLocalStorage('timeSlotConfig', defaultConfig);
-        // Supprimé : setFeedback('Succès: Configuration réinitialisée.');
+        setFeedback('Succès: Configuration réinitialisée.');
     };
 
-    const handleImport = (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = JSON.parse(e.target.result);
-                if (!data.config || !Array.isArray(data.config.timeSlots) || !data.config.interval || !data.config.startTime || !data.config.endTime) {
-                    return; // Supprimé : setFeedback('Erreur: Données de configuration invalides dans le fichier importé.');
-                }
-                setConfig(data.config);
-                saveToLocalStorage('timeSlotConfig', data.config);
-                // Supprimé : setFeedback('Succès: Configuration importée avec succès.');
-            } catch (error) {
-                console.error('Erreur lors de l\'importation:', error);
-                // Supprimé : setFeedback('Erreur: Échec de l\'importation du fichier JSON.');
-            }
-        };
-        reader.readAsText(file);
-    };
-
-    const handleExport = () => {
-        const data = { config };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `config_export_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        // Supprimé : setFeedback('Succès: Configuration exportée avec succès.');
-    };
-
-    console.log('Rendering TimeSlotConfig with config:', config);
+    console.log('Rendering TimeSlotConfig with config:', config, 'selectedShop:', selectedShop);
 
     return (
         <div className="step-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -111,17 +85,11 @@ const TimeSlotConfig = ({ config, setConfig, setStep, setFeedback }) => {
                 Configuration des tranches horaires
             </h2>
             <div className="button-group" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px' }}>
-                <Button className="button-validate" onClick={handleExport}>
+                <Button className="button-validate" onClick={() => exportAllData(setFeedback)}>
                     Exporter
                 </Button>
-                <Button className="button-validate">
-                    Importer
-                    <input
-                        type="file"
-                        accept=".json"
-                        onChange={handleImport}
-                        style={{ display: 'none' }}
-                    />
+                <Button className="button-validate" onClick={() => importAllData(setFeedback, () => {}, () => {}, setConfig)}>
+                    <FaUpload /> Importer
                 </Button>
             </div>
             <div className="form-group" style={{ marginBottom: '15px', width: '100%', maxWidth: '400px' }}>
