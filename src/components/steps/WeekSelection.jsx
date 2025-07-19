@@ -3,7 +3,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, addDays, isMonday } from
 import { fr } from 'date-fns/locale';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
 import Button from '../common/Button';
-import '@/assets/styles.css'; // Correct : chemin avec alias @
+import '@/assets/styles.css';
 
 const WeekSelection = ({ onNext, onBack, onReset, selectedWeek, selectedShop }) => {
     const [month, setMonth] = useState(selectedWeek ? format(new Date(selectedWeek), 'yyyy-MM') : format(new Date(), 'yyyy-MM'));
@@ -53,7 +53,7 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek, selectedShop }) 
         const monthStart = startOfMonth(new Date(month));
         const monthEnd = endOfMonth(new Date(month));
         const weeks = [];
-        let current = startOfWeek(monthStart, { weekStartsOn: 1 }); // Commence par un lundi
+        let current = startOfWeek(monthStart, { weekStartsOn: 1 });
         while (current <= monthEnd) {
             if (isMonday(current)) {
                 weeks.push({
@@ -96,13 +96,17 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek, selectedShop }) 
     };
 
     const handleReset = () => {
+        if (!currentWeek) {
+            setFeedback('Erreur: Veuillez sélectionner une semaine à réinitialiser.');
+            return;
+        }
         if (typeof onReset !== 'function') {
             console.error('onReset is not a function:', onReset);
             setFeedback('Erreur: Action Réinitialiser non disponible.');
             return;
         }
-        console.log('Calling onReset');
-        onReset({ feedback: 'Succès: Toutes les données ont été réinitialisées.' });
+        console.log('Calling onReset for week reset');
+        onReset({ source: 'week', selectedWeek: currentWeek });
     };
 
     return (
