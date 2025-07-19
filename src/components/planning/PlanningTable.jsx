@@ -7,29 +7,63 @@ const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, togg
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState(null);
     const [dragValue, setDragValue] = useState(null);
+    let clickTimeout = null;
 
-    const handleMouseDown = (employee, slotIndex, dayIndex) => {
+    const handleMouseDown = (employee, slotIndex, dayIndex, event) => {
+        if (event.type !== 'mousedown') return;
+        console.log('handleMouseDown called:', { employee, slotIndex, dayIndex });
         setIsDragging(true);
         setDragStart({ employee, slotIndex, dayIndex });
-        const currentValue = planning[employee]?.[format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd')]?.[slotIndex] || false;
+
+        const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
+        const currentValue = planning[employee]?.[dayKey]?.[slotIndex] || false;
         setDragValue(!currentValue);
-        toggleSlot(employee, slotIndex, dayIndex, !currentValue);
+
+        // Simulate single click if no movement occurs
+        clickTimeout = setTimeout(() => {
+            if (typeof toggleSlot === 'function') {
+                console.log('Simulating single click:', { employee, slotIndex, dayIndex, currentValue });
+                toggleSlot(employee, slotIndex, dayIndex, !currentValue);
+            } else {
+                console.error('toggleSlot is not a function:', toggleSlot);
+            }
+        }, 100);
     };
 
-    const handleMouseOver = (employee, slotIndex, dayIndex) => {
-        if (isDragging && dragStart) {
+    const handleMouseMove = (employee, slotIndex, dayIndex, event) => {
+        if (!isDragging || !dragStart || event.type !== 'mousemove') return;
+        if (employee !== dragStart.employee || dayIndex !== dragStart.dayIndex) return;
+        clearTimeout(clickTimeout); // Cancel single click if movement occurs
+        console.log('handleMouseMove called:', { employee, slotIndex, dayIndex, dragValue });
+        if (typeof toggleSlot === 'function') {
             toggleSlot(employee, slotIndex, dayIndex, dragValue);
+        } else {
+            console.error('toggleSlot is not a function:', toggleSlot);
         }
     };
 
     const handleMouseUp = () => {
+        console.log('handleMouseUp called');
+        clearTimeout(clickTimeout);
         setIsDragging(false);
         setDragStart(null);
         setDragValue(null);
     };
 
-    const handleClick = (employee, slotIndex, dayIndex) => {
-        const currentValue = planning[employee]?.[format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd')]?.[slotIndex] || false;
+    const handleTouchStart = (employee, slotIndex, dayIndex, event) => {
+        console.log('handleTouchStart called:', { employee, slotIndex, dayIndex });
+        event.preventDefault(); // Prevent scrolling on touch devices
+        if (typeof toggleSlot !== 'function') {
+            console.error('toggleSlot is not a function:', toggleSlot);
+            return;
+        }
+        if (!planning || !selectedWeek || currentDay === undefined || !selectedEmployees) {
+            console.error('Invalid props:', { planning, selectedWeek, currentDay, selectedEmployees });
+            return;
+        }
+        const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
+        const currentValue = planning[employee]?.[dayKey]?.[slotIndex] || false;
+        console.log('Toggling slot:', { employee, dayKey, slotIndex, currentValue });
         toggleSlot(employee, slotIndex, dayIndex, !currentValue);
     };
 
@@ -44,7 +78,7 @@ const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, togg
     };
 
     return (
-        <div className="table-container" onMouseUp={handleMouseUp}>
+        <div className="table-container" onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
             <table className="planning-table">
                 <thead>
                     <tr>
@@ -68,9 +102,9 @@ const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, togg
                                     <td
                                         key={slotIndex}
                                         className={`scrollable-col ${isChecked ? `clicked-${employeeIndex % 7}` : ''}`}
-                                        onMouseDown={() => handleMouseDown(employee, slotIndex, currentDay)}
-                                        onMouseOver={() => handleMouseOver(employee, slotIndex, currentDay)}
-                                        onClick={() => handleClick(employee, slotIndex, currentDay)}
+                                        onTouchStart={(e) => handleTouchStart(employee, slotIndex, currentDay, e)}
+                                        onMouseDown={(e) => handleMouseDown(employee, slotIndex, currentDay, e)}
+                                        onMouseMove={(e) => handleMouseMove(employee, slotIndex, currentDay, e)}
                                     >
                                         {isChecked ? '✅' : ''}
                                     </td>
