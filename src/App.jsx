@@ -23,6 +23,7 @@ const App = () => {
     });
     const [feedback, setFeedback] = useState('');
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+    const [resetSource, setResetSource] = useState('');
 
     const shops = loadFromLocalStorage('shops', ['MaBoutique', 'Boutique2']);
 
@@ -62,7 +63,20 @@ const App = () => {
             saveToLocalStorage('lastPlanning', {});
             setSelectedShop('');
             setFeedback(data.feedback);
-            setStep(2); // Rester sur ShopSelection après réinitialisation
+            setStep(2);
+        } else if (data.source === 'week') {
+            console.log('App: Resetting week');
+            if (data.resetOption === 'week' && data.selectedWeek) {
+                saveToLocalStorage(`planning_${selectedShop}_${data.selectedWeek}`, {});
+                saveToLocalStorage(`selected_employees_${selectedShop}_${data.selectedWeek}`, []);
+                setFeedback(data.feedback);
+                setStep(3);
+            } else if (data.resetOption === 'all_weeks' && selectedShop) {
+                const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(`planning_${selectedShop}_`) || key.startsWith(`selected_employees_${selectedShop}_`));
+                storageKeys.forEach(key => localStorage.removeItem(key));
+                setFeedback(data.feedback);
+                setStep(3);
+            }
         } else {
             console.log('App: Full reset');
             setSelectedShop('');
@@ -93,7 +107,10 @@ const App = () => {
                         setStep={setStep}
                         setFeedback={setFeedback}
                         onNext={handleNextConfig}
-                        onReset={() => setIsResetModalOpen(true)}
+                        onReset={() => {
+                            setResetSource('config');
+                            setIsResetModalOpen(true);
+                        }}
                     />
                 );
             case 2:
@@ -103,7 +120,10 @@ const App = () => {
                         selectedShop={selectedShop}
                         setSelectedShop={setSelectedShop}
                         onNext={handleNextShop}
-                        onReset={handleReset}
+                        onReset={() => {
+                            setResetSource('shops');
+                            setIsResetModalOpen(true);
+                        }}
                         setFeedback={setFeedback}
                         setStep={setStep}
                     />
@@ -113,7 +133,10 @@ const App = () => {
                     <WeekSelection
                         onNext={handleNextWeek}
                         onBack={handleBackWeek}
-                        onReset={() => setIsResetModalOpen(true)}
+                        onReset={() => {
+                            setResetSource('week');
+                            setIsResetModalOpen(true);
+                        }}
                         selectedWeek={selectedWeek}
                         selectedShop={selectedShop}
                     />
@@ -127,7 +150,10 @@ const App = () => {
                         selectedWeek={selectedWeek}
                         setStep={setStep}
                         setFeedback={setFeedback}
-                        onReset={() => setIsResetModalOpen(true)}
+                        onReset={() => {
+                            setResetSource('employees');
+                            setIsResetModalOpen(true);
+                        }}
                     />
                 );
             case 5:
@@ -142,7 +168,10 @@ const App = () => {
                         onBackToShop={() => setStep(2)}
                         onBackToWeek={() => setStep(3)}
                         onBackToConfig={() => setStep(1)}
-                        onReset={() => setIsResetModalOpen(true)}
+                        onReset={() => {
+                            setResetSource('planning');
+                            setIsResetModalOpen(true);
+                        }}
                     />
                 );
             default:
@@ -164,6 +193,7 @@ const App = () => {
                 setPlanning={() => {}}
                 setFeedback={setFeedback}
                 setAvailableWeeks={() => {}}
+                resetSource={resetSource}
             />
             {feedback && (
                 <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: feedback.includes('Succès') ? '#4caf50' : '#e53935' }}>
