@@ -5,7 +5,7 @@ import PlanningDisplay from './components/planning/PlanningDisplay';
 import ShopSelection from './components/steps/ShopSelection';
 import TimeSlotConfig from './components/steps/TimeSlotConfig';
 import ResetModal from './components/planning/ResetModal';
-import { loadFromLocalStorage } from './utils/localStorage';
+import { loadFromLocalStorage, saveToLocalStorage } from './utils/localStorage';
 import '@/assets/styles.css';
 
 const App = () => {
@@ -14,7 +14,7 @@ const App = () => {
     const [selectedWeek, setSelectedWeek] = useState('');
     const [selectedEmployees, setSelectedEmployees] = useState([]);
     const [config, setConfig] = useState({
-        timeSlots: [], // Initialisé vide, généré dans TimeSlotConfig
+        timeSlots: [],
         interval: 30,
         startTime: '09:00',
         endTime: '01:00',
@@ -55,21 +55,31 @@ const App = () => {
     };
 
     const handleReset = (data) => {
-        console.log('App: Resetting data', data);
-        setSelectedShop('');
-        setSelectedWeek('');
-        setSelectedEmployees([]);
-        setConfig({
-            timeSlots: [],
-            interval: 30,
-            startTime: '09:00',
-            endTime: '01:00',
-            startTimeCustom: '',
-            endTimeCustom: ''
-        });
-        localStorage.clear();
-        setFeedback(data.feedback);
-        setStep(1);
+        console.log('App: handleReset called with:', data);
+        if (data.source === 'shops') {
+            console.log('App: Resetting shops only');
+            saveToLocalStorage('shops', []);
+            saveToLocalStorage('lastPlanning', {});
+            setSelectedShop('');
+            setFeedback(data.feedback);
+            setStep(2); // Rester sur ShopSelection après réinitialisation
+        } else {
+            console.log('App: Full reset');
+            setSelectedShop('');
+            setSelectedWeek('');
+            setSelectedEmployees([]);
+            setConfig({
+                timeSlots: [],
+                interval: 30,
+                startTime: '09:00',
+                endTime: '01:00',
+                startTimeCustom: '',
+                endTimeCustom: ''
+            });
+            localStorage.clear();
+            setFeedback(data.feedback || 'Succès: Toutes les données réinitialisées.');
+            setStep(1);
+        }
         setIsResetModalOpen(false);
     };
 
@@ -93,7 +103,7 @@ const App = () => {
                         selectedShop={selectedShop}
                         setSelectedShop={setSelectedShop}
                         onNext={handleNextShop}
-                        onReset={() => setIsResetModalOpen(true)}
+                        onReset={handleReset}
                         setFeedback={setFeedback}
                         setStep={setStep}
                     />
@@ -151,9 +161,9 @@ const App = () => {
                 selectedWeek={selectedWeek}
                 selectedEmployees={selectedEmployees}
                 planning={{}}
-                setPlanning={() => {}} // Placeholder, car ResetModal met à jour son propre planning
+                setPlanning={() => {}}
                 setFeedback={setFeedback}
-                setAvailableWeeks={() => {}} // Placeholder, car non utilisé dans App.jsx
+                setAvailableWeeks={() => {}}
             />
             {feedback && (
                 <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: feedback.includes('Succès') ? '#4caf50' : '#e53935' }}>

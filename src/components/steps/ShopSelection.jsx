@@ -79,18 +79,19 @@ const ShopSelection = ({ shops: propsShops, setShops: setPropsShops, selectedSho
     };
 
     const handleReset = () => {
-        console.log('handleReset called');
-        if (typeof onReset !== 'function') {
-            console.error('onReset is not a function:', onReset);
-            setFeedback('Erreur: Action Réinitialiser non disponible.');
-            return;
-        }
+        console.log('handleReset called in ShopSelection');
         setNewShop('');
         setSelectedShop('');
         saveToLocalStorage('shops', []);
         setShops([]);
         saveToLocalStorage('lastPlanning', {});
-        onReset({ feedback: 'Succès: Liste des boutiques réinitialisée.' });
+        console.log('Calling onReset for shops reset');
+        if (typeof onReset === 'function') {
+            onReset({ feedback: 'Succès: Liste des boutiques réinitialisée.', source: 'shops' });
+        } else {
+            console.error('onReset is not a function:', onReset);
+            setFeedback('Erreur: Action Réinitialiser non disponible.');
+        }
     };
 
     console.log('Rendering ShopSelection with shops:', shops, 'selectedShop:', selectedShop);
