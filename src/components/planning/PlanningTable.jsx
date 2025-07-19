@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format, addDays } from 'date-fns';
+import { format, addDays, addMinutes } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import '@/assets/styles.css';
 
@@ -8,6 +8,13 @@ const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, togg
     const [dragStart, setDragStart] = useState(null);
     const [dragValue, setDragValue] = useState(null);
     let clickTimeout = null;
+
+    const getEndTime = (startTime, interval) => {
+        if (!startTime) return '-';
+        const [hours, minutes] = startTime.split(':').map(Number);
+        const date = new Date(2025, 0, 1, hours, minutes);
+        return format(addMinutes(date, interval), 'HH:mm');
+    };
 
     const handleMouseDown = (employee, slotIndex, dayIndex, event) => {
         if (event.type !== 'mousedown') return;
@@ -19,7 +26,6 @@ const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, togg
         const currentValue = planning[employee]?.[dayKey]?.[slotIndex] || false;
         setDragValue(!currentValue);
 
-        // Simulate single click if no movement occurs
         clickTimeout = setTimeout(() => {
             if (typeof toggleSlot === 'function') {
                 console.log('Simulating single click:', { employee, slotIndex, dayIndex, currentValue });
@@ -33,7 +39,7 @@ const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, togg
     const handleMouseMove = (employee, slotIndex, dayIndex, event) => {
         if (!isDragging || !dragStart || event.type !== 'mousemove') return;
         if (employee !== dragStart.employee || dayIndex !== dragStart.dayIndex) return;
-        clearTimeout(clickTimeout); // Cancel single click if movement occurs
+        clearTimeout(clickTimeout);
         console.log('handleMouseMove called:', { employee, slotIndex, dayIndex, dragValue });
         if (typeof toggleSlot === 'function') {
             toggleSlot(employee, slotIndex, dayIndex, dragValue);
@@ -52,7 +58,7 @@ const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, togg
 
     const handleTouchStart = (employee, slotIndex, dayIndex, event) => {
         console.log('handleTouchStart called:', { employee, slotIndex, dayIndex });
-        event.preventDefault(); // Prevent scrolling on touch devices
+        event.preventDefault();
         if (typeof toggleSlot !== 'function') {
             console.error('toggleSlot is not a function:', toggleSlot);
             return;
@@ -82,13 +88,22 @@ const PlanningTable = ({ config, selectedWeek, planning, selectedEmployees, togg
             <table className="planning-table">
                 <thead>
                     <tr>
-                        <th className="fixed-col">Employé</th>
+                        <th className="fixed-col header">DE</th>
                         {config.timeSlots.map((slot, index) => (
-                            <th key={index} className="scrollable-col">
-                                {slot}
+                            <th key={slot} className="scrollable-col">{slot}</th>
+                        ))}
+                        <th className="fixed-col header">Total</th>
+                    </tr>
+                    <tr>
+                        <th className="fixed-col header">À</th>
+                        {config.timeSlots.map((slot, index) => (
+                            <th key={slot} className="scrollable-col">
+                                {index < config.timeSlots.length - 1
+                                    ? config.timeSlots[index + 1]
+                                    : getEndTime(config.timeSlots[config.timeSlots.length - 1], config.interval)}
                             </th>
                         ))}
-                        <th className="scrollable-col">Total heures</th>
+                        <th className="fixed-col header"></th>
                     </tr>
                 </thead>
                 <tbody>
